@@ -73,6 +73,12 @@ class ReporteDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        # Solo Admin MINED puede borrar reportes
+        if not request.user.es_admin_nacional:
+            return Response(
+                {'error': 'Solo Admin MINED puede borrar reportes'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         reporte = self.get_object(pk)
         if not reporte:
             return Response({'error': 'Reporte no encontrado'}, status=status.HTTP_404_NOT_FOUND)

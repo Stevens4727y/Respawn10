@@ -84,6 +84,18 @@ export default function Reportes() {
     }
   }
 
+  const borrarReporte = async (id) => {
+    if (!window.confirm('¿Está seguro que desea eliminar este reporte?')) return
+    try {
+      await api.delete(`/reportes/${id}/`)
+      setSuccess('Reporte eliminado correctamente')
+      cargarReportes()
+      setTimeout(() => setSuccess(''), 3000)
+    } catch {
+      setError('Error al eliminar el reporte')
+    }
+  }
+
   const reportesFiltrados = filtroEstado === 'Todos'
     ? reportes
     : reportes.filter(r => r.estado === filtroEstado)
@@ -366,6 +378,16 @@ export default function Reportes() {
                         ✓ Marcar resuelto
                       </button>
                     </div>
+                  )}
+
+                  {/* Botón de borrar — Solo Admin */}
+                  {usuario?.rol === 'Admin MINED' && (
+                    <button
+                      onClick={() => borrarReporte(reporte.id)}
+                      className="w-full py-2 rounded-lg text-xs font-medium cursor-pointer mt-3"
+                      style={{ background:'#FFEBEE', color:'#B71C1C' }}>
+                      🗑️ Eliminar reporte
+                    </button>
                   )}
                 </div>
               )
