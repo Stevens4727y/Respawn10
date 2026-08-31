@@ -25,11 +25,12 @@ class SolicitudListCreateView(generics.ListCreateAPIView):
 			return SolicitudRecurso.objects.none()
 
 	def perform_create(self, serializer):
-		# Solo Admin MINED puede crear solicitudes
-		if not self.request.user.es_admin_nacional:
-			from rest_framework.exceptions import PermissionDenied
-			raise PermissionDenied('Solo Admin MINED puede crear solicitudes')
-		serializer.save(usuario=self.request.user)
+		user = self.request.user
+		if user.es_admin_nacional or user.es_supervisor or user.es_director or user.es_docente:
+			serializer.save(usuario=user)
+			return
+		from rest_framework.exceptions import PermissionDenied
+		raise PermissionDenied('No tienes permisos para crear solicitudes')
 
 
 class SolicitudDetailView(generics.RetrieveUpdateDestroyAPIView):

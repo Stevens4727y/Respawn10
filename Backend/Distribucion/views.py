@@ -26,7 +26,12 @@ class DistribucionListCreateView(generics.ListCreateAPIView):
 
 	def perform_create(self, serializer):
 		"""Registrar el usuario que solicita la distribución"""
-		serializer.save(usuario=self.request.user)
+		user = self.request.user
+		if user.es_admin_nacional or user.es_supervisor or user.es_director or user.es_docente:
+			serializer.save(usuario=user)
+			return
+		from rest_framework.exceptions import PermissionDenied
+		raise PermissionDenied('No tienes permisos para crear una distribución')
 
 
 class DistribucionDetailView(generics.RetrieveUpdateDestroyAPIView):

@@ -75,6 +75,13 @@ export default function Distribucion() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const rol = usuario?.rol
+    const puedeCrear = ['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(rol)
+    if (!puedeCrear) {
+      setError('No tienes permisos para crear distribuciones')
+      return
+    }
+
     setError('')
     try {
       await api.post('/distribucion/', {
@@ -84,6 +91,7 @@ export default function Distribucion() {
         escuela: form.escuela,
         observaciones: form.observaciones,
         estado: 'Enviado',
+        responsable_envio: `${usuario?.nombre || ''} ${usuario?.apellido || ''}`.trim() || 'Sistema'
       })
       setSuccess('Solicitud de distribución creada correctamente')
       setShowForm(false)
@@ -157,12 +165,14 @@ export default function Distribucion() {
               Gestión de distribución de items a instituciones por departamento
             </p>
           </div>
-          <button onClick={() => setShowForm(!showForm)}
-            className="px-6 py-3 rounded-xl text-white font-semibold cursor-pointer"
-            style={{ background:'linear-gradient(135deg, #000080, #0000cc)',
-              boxShadow:'0 4px 15px rgba(0,0,128,0.3)' }}>
-            + Nueva Distribución
-          </button>
+          {['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(usuario?.rol) && (
+            <button onClick={() => setShowForm(!showForm)}
+              className="px-6 py-3 rounded-xl text-white font-semibold cursor-pointer"
+              style={{ background:'linear-gradient(135deg, #000080, #0000cc)',
+                boxShadow:'0 4px 15px rgba(0,0,128,0.3)' }}>
+              + Nueva Distribución
+            </button>
+          )}
         </div>
 
         {/* Mensajes */}

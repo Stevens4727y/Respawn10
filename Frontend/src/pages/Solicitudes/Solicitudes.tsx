@@ -59,19 +59,22 @@ export default function Solicitudes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (usuario?.rol !== 'Admin MINED') {
-      setError('Solo Admin MINED puede crear solicitudes')
+    const rol = usuario?.rol
+    const puedeCrear = ['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(rol)
+    if (!puedeCrear) {
+      setError('No tienes permisos para crear solicitudes')
       return
     }
-    
+
     setError('')
     try {
       await api.post('/solicitudes/', {
-        descripcion: form.descripcion,
-        estado:      form.estado,
-        item:        form.item,
-        escuela:     form.escuela,
-        cantidad:    form.cantidad,
+        tipo_solicitud: 'Recurso',
+        cantidad_solicitada: form.cantidad,
+        justificacion: form.descripcion,
+        estado: form.estado,
+        item: form.item,
+        escuela: form.escuela,
       })
       setSuccess('Solicitud creada correctamente')
       setShowForm(false)
@@ -161,7 +164,7 @@ export default function Solicitudes() {
               Gestión de solicitudes de recursos escolares
             </p>
           </div>
-          {usuario?.rol === 'Admin MINED' && (
+          {['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(usuario?.rol) && (
             <button onClick={() => setShowForm(!showForm)}
               className="px-6 py-3 rounded-xl text-white font-semibold cursor-pointer"
               style={{ background:'linear-gradient(135deg, #000080, #0000cc)',
@@ -172,10 +175,10 @@ export default function Solicitudes() {
         </div>
 
         {/* Mensaje de restricción */}
-        {usuario?.rol !== 'Admin MINED' && (
+        {!['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(usuario?.rol) && (
           <div className="mb-4 px-4 py-3 rounded-xl text-sm"
             style={{ background:'#FFF8E1', border:'1px solid #FFE082', color:'#F57F17' }}>
-            ℹ️ Solo Admin MINED puede crear y gestionar solicitudes
+            ℹ️ Solo el administrador, supervisor, director y docente pueden crear solicitudes
           </div>
         )}
 
@@ -194,7 +197,7 @@ export default function Solicitudes() {
         )}
 
         {/* Formulario nueva solicitud — Solo Admin */}
-        {showForm && usuario?.rol === 'Admin MINED' && (
+        {showForm && ['Admin MINED', 'Supervisor', 'Director', 'Docente'].includes(usuario?.rol) && (
           <div className="rounded-2xl p-6 mb-6"
             style={{ background:'#fff', border:'1.5px solid #e0e0f0',
               boxShadow:'0 4px 20px rgba(0,0,128,0.08)' }}>

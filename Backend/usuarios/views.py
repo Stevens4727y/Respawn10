@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
-from .models import Departamento, Institucion
+from .models import Departamento, Institucion, Rol, Usuario
+from .serializers import UsuarioAsignacionSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -91,6 +92,71 @@ class DepartamentosView(APIView):
             }
             for departamento in departamentos
         ])
+
+
+class RolesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not getattr(request.user, 'es_admin_nacional', False):
+            return Response({'detail': 'Solo el administrador puede consultar roles.'}, status=403)
+
+        roles = Rol.objects.order_by('nombre')
+        return Response([
+            {'id': rol.id, 'nombre': rol.nombre, 'descripcion': rol.descripcion}
+            for rol in roles
+        ])
+
+
+class UsuariosListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not getattr(request.user, 'es_admin_nacional', False):
+            return Response({'detail': 'Solo el administrador puede gestionar usuarios.'}, status=403)
+
+        usuarios = Usuario.objects.select_related('rol', 'departamento_asignado', 'institucion').order_by('nombre')
+        serializer = UsuarioAsignacionSerializer(usuarios, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        if not getattr(request.user, 'es_admin_nacional', False):
+            return Response({'detail': 'Solo el administrador puede crear usuarios.'}, status=403)
+
+        serializer = UsuarioAsignacionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class UsuarioDetalleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        if not getattr(request.user, 'es_admin_nacional', False):
+            return Response({'detail': 'Solo el administrador puede consultar usuarios.'}, status=403)
+
+        usuario = Usuario.objects.select_related('rol', 'departamento_asignado', 'institucion').filter(pk=pk).first()
+        if not usuario:
+            return Response({'detail': 'Usuario no encontrado.'}, status=404)
+
+        serializer = UsuarioAsignacionSerializer(usuario)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        if not getattr(request.user, 'es_admin_nacional', False):
+            return Response({'detail': 'Solo el administrador puede actualizar usuarios.'}, status=403)
+
+        usuario = Usuario.objects.filter(pk=pk).first()
+        if not usuario:
+            return Response({'detail': 'Usuario no encontrado.'}, status=404)
+
+        serializer = UsuarioAsignacionSerializer(usuario, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
 
 
 class InstitucionesView(APIView):
