@@ -178,10 +178,29 @@ class Command(BaseCommand):
 
     def _crear_usuarios_demo(self):
         try:
-            roles = {r.nombre: r for r in Rol.objects.all()}
+            # Asegurar que los roles correctos existen
+            admin_mined_rol, _ = Rol.objects.get_or_create(
+                nombre='Admin MINED',
+                defaults={'descripcion': 'Administrador nacional', 'permisos': 'total'}
+            )
+            supervisor_rol, _ = Rol.objects.get_or_create(
+                nombre='Supervisor',
+                defaults={'descripcion': 'Supervisor de departamento', 'permisos': 'departamento'}
+            )
+            director_rol, _ = Rol.objects.get_or_create(
+                nombre='Director',
+                defaults={'descripcion': 'Director de institución', 'permisos': 'institucion'}
+            )
+            docente_rol, _ = Rol.objects.get_or_create(
+                nombre='Docente',
+                defaults={'descripcion': 'Docente registrador', 'permisos': 'institucion'}
+            )
+            auditor_rol, _ = Rol.objects.get_or_create(
+                nombre='Auditor',
+                defaults={'descripcion': 'Solo lectura', 'permisos': 'lectura'}
+            )
 
             # Obtener instituciones y departamentos para asignar
-            inst_cuba    = Institucion.objects.filter(codigo='CEC-001').first()
             inst_uni     = Institucion.objects.filter(codigo='UNI-001').first()
             dept_managua = Departamento.objects.filter(codigo='MGA').first()
 
@@ -191,7 +210,7 @@ class Command(BaseCommand):
                     'password': 'Respawn2025*',
                     'nombre': 'Steven',
                     'apellido': 'Barahona',
-                    'rol': 'Admin MINED',
+                    'rol': admin_mined_rol,
                     'is_staff': True,
                     'is_superuser': True,
                 },
@@ -200,16 +219,16 @@ class Command(BaseCommand):
                     'password': 'Respawn2025*',
                     'nombre': 'Belia',
                     'apellido': 'Espinoza',
-                    'rol': 'Supervisor',
+                    'rol': supervisor_rol,
                     'departamento': dept_managua,
-                    'descripcion_rol': 'Supervisor del departamento de Managua',
+                    'descripcion_rol': 'Supervisor de Managua',
                 },
                 {
                     'email': 'douglas@mined.gob.ni',
                     'password': 'Respawn2025*',
                     'nombre': 'Douglas',
                     'apellido': 'Munguia',
-                    'rol': 'Director',
+                    'rol': director_rol,
                     'institucion': inst_uni,
                     'descripcion_rol': 'Director de la UNI',
                 },
@@ -218,7 +237,7 @@ class Command(BaseCommand):
                     'password': 'Respawn2025*',
                     'nombre': 'Edwin',
                     'apellido': 'Blandon',
-                    'rol': 'Docente',
+                    'rol': docente_rol,
                     'institucion': inst_uni,
                     'descripcion_rol': 'Docente de la UNI',
                 },
@@ -227,7 +246,7 @@ class Command(BaseCommand):
                     'password': 'Respawn2025*',
                     'nombre': 'Auditor',
                     'apellido': 'MINED',
-                    'rol': 'Auditor',
+                    'rol': auditor_rol,
                     'descripcion_rol': 'Auditor de solo lectura',
                 },
             ]
@@ -238,25 +257,23 @@ class Command(BaseCommand):
                     defaults={
                         'nombre': data['nombre'],
                         'apellido': data['apellido'],
-                        'password': data['password'],
                     }
                 )
 
-                if not created:
-                    self.stdout.write(f'🔄 Actualizando: {data["email"]}')
-                    u.nombre = data['nombre']
-                    u.apellido = data['apellido']
-
+                # Siempre actualizar el usuario con los datos correctos
+                u.nombre = data['nombre']
+                u.apellido = data['apellido']
                 u.set_password(data['password'])
-                u.rol = roles.get(data['rol'])
+                u.rol = data['rol']
                 u.departamento_asignado = data.get('departamento')
                 u.institucion = data.get('institucion')
                 u.is_staff = data.get('is_staff', False)
                 u.is_superuser = data.get('is_superuser', False)
                 u.save()
 
-                desc = data.get('descripcion_rol', data['rol'])
-                self.stdout.write(f'✅ {data["email"]} → {data["rol"]} ({desc})')
+                desc = data.get('descripcion_rol', data['rol'].nombre if data['rol'] else 'N/A')
+                estado = '✅ Creado' if created else '🔄 Actualizado'
+                self.stdout.write(f'{estado}: {data["email"]} → {data["rol"].nombre} ({desc})')
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'❌ Error: {e}'))
+            self.stdout.write(self.style.ERROR(f'❌ Error en _crear_usuarios_demo: {e}'))
