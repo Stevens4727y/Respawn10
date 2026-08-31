@@ -25,7 +25,16 @@ class Distribucion(models.Model):
     solicitud         = models.ForeignKey(
         SolicitudRecurso,
         on_delete=models.PROTECT,
-        related_name='distribuciones'
+        related_name='distribuciones',
+        blank=True,
+        null=True
+    )
+    usuario           = models.ForeignKey(
+        'usuarios.Usuario',
+        on_delete=models.SET_NULL,
+        related_name='distribuciones_solicitadas',
+        blank=True,
+        null=True
     )
     escuela           = models.ForeignKey(
         Escuela,
